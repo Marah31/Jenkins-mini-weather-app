@@ -1,8 +1,6 @@
 pipeline {
     agent any
-    environment {
-        PYTHON = "python3"
-    }
+
     stages {
 
         stage('Checkout') {
@@ -12,48 +10,42 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Python Environment') {
             steps {
                 sh '''
-                    sudo apt update
-                    sudo apt install python3.12-venv -y
-                    . venv/bin/activate
-                    sudo apt install -r requirements.txt
+                python3 -m pip install --upgrade pip
+                pip install -r requirements.txt
                 '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'npm test || echo "No tests found, skipping..."'
-            }
-        }
-
-        stage('Build') {
-            steps {
                 sh '''
-                    . venv/bin/activate
-                    pytest test_app.py --junitxml=reports/test-results.xml || echo "Tests skipped or no tests found."
+                if [ -f test_app.py ]; then
+                    echo "Running tests..."
+                    python3 -m unittest discover -s . -p "test_*.py"
+                else
+                    echo "No tests found, skipping..."
+                fi
                 '''
             }
         }
 
         stage('Simulate Deployment') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    timeout 60s ${PYTHON} app.py || echo "App stopped after 60 seconds."
-                '''
+                sh 'nohup python3 app.py &'
+                echo 'App is running. Deployment simulated successfully.'
             }
         }
     }
 
     post {
         success {
-            echo 'success'
+            echo 'Success'
         }
         failure {
-            echo 'failed'
+            echo 'Failed'
         }
     }
 }
