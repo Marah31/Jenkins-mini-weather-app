@@ -15,10 +15,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    apt install python3.12-venv
+                    sudo apt update
+                    sudo apt install python3.12-venv -y
                     . venv/bin/activate
-                    apt install --upgrade pip
-                    apt install -r requirements.txt
+                    sudo apt install -r requirements.txt
                 '''
             }
         }
