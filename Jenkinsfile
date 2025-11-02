@@ -9,19 +9,16 @@ pipeline {
             steps {
                 echo 'Cloning repository...'
                 checkout scm
-
-                sh 'pwd'
-                sh 'ls -la'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    ${PYTHON} -m venv venv
+                    apt install python3.12-venv
                     . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    apt install --upgrade pip
+                    apt install -r requirements.txt
                 '''
             }
         }
