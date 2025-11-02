@@ -7,6 +7,9 @@ pipeline {
             steps {
                 echo 'Cloning repository...'
                 checkout scm
+
+                sh 'pwd'
+                sh 'ls -la'
             }
         }
 
