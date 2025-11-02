@@ -1,51 +1,46 @@
 pipeline {
-    agent any
-
-    stages {
-
-        stage('Checkout') {
-            steps {
-                echo 'Cloning repository...'
-                checkout scm
-            }
-        }
-
-        stage('Setup Python Environment') {
-            steps {
-                sh '''
-                python3 -m pip install --upgrade pip
-                pip install -r requirements.txt
-                '''
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh '''
-                if [ -f test_app.py ]; then
-                    echo "Running tests..."
-                    python3 -m unittest discover -s . -p "test_*.py"
-                else
-                    echo "No tests found, skipping..."
-                fi
-                '''
-            }
-        }
-
-        stage('Simulate Deployment') {
-            steps {
-                sh 'nohup python3 app.py &'
-                echo 'App is running. Deployment simulated successfully.'
-            }
-        }
+  agent {
+    docker {
+      image 'python:3.10-slim'  
+      args '-u root:root'       
     }
+  }
 
-    post {
-        success {
-            echo 'Success'
-        }
-        failure {
-            echo 'Failed'
-        }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
     }
+    stage('Install Dependencies') {
+      steps {
+        sh '''
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install -r requirements.txt
+        '''
+      }
+    }
+    stage('Run Tests') {
+      steps {
+        sh '''
+          . venv/bin/activate
+          pytest test_app.py --junitxml=reports/test-results.xml
+        '''
+      }
+    }
+    stage('Run App') {
+      steps {
+        sh '''
+          . venv/bin/activate
+          timeout 60s python3 app.py || echo "App stopped after timeout."
+        '''
+      }
+    }
+  }
+
+  post {
+    success { echo 'Pipeline succeeded!' }
+    failure { echo 'Pipeline failed.' }
+  }
 }
